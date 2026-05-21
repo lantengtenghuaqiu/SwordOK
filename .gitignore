@@ -106,5 +106,3 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
 /.vsconfig
-ProjectSettings/
-Packages/
