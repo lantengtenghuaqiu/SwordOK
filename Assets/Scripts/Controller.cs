@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Controller : MonoBehaviour
@@ -12,6 +13,8 @@ public class Controller : MonoBehaviour
     [SerializeField]
     public Animator character_animator;
 
+    public Vector2 firstPos;
+    public Vector2 secondPos;
 
     public float LeftRocker_H;
     float LeftRocker_V;
@@ -19,8 +22,9 @@ public class Controller : MonoBehaviour
     float RightRocker_H;
     float RightRocker_V;
 
-    float[] first_input = new float[2];
-    float[] end_input = new float[2];
+    float direction;
+
+    bool startCheck = false;
 
     // Start is called before the first frame update
     void Start()
@@ -39,7 +43,7 @@ public class Controller : MonoBehaviour
         else
             Debug.Log(character_animator.name);
 
-        StartCoroutine(Print(buttonPressed));
+        //StartCoroutine(Print());
     }
 
     // Update is called once per frame
@@ -51,23 +55,63 @@ public class Controller : MonoBehaviour
         RightRocker_V = Input.GetAxis("RightVertical");
 
         buttonPressed = Input.GetKey(KeyCode.JoystickButton5);
-        if (buttonPressed && RightRocker_H > 0.5)
-            character_animator.SetBool("LeftAttack", true);
-        else
-            character_animator.SetBool("LeftAttack", false);
+        if (buttonPressed && !startCheck)
+        {
+            startCheck = true;
+            StartCoroutine(Print());
 
-        if (buttonPressed && RightRocker_H < -0.5)
-            character_animator.SetBool("RightAttack", true);
-        else
-            character_animator.SetBool("RightAttack", false);
+        }
+        if (startCheck == false)
+        {
+            StopCoroutine(Print());
+        }
+        AnimatorStateInfo statInfo = character_animator.GetCurrentAnimatorStateInfo(0);
+        Debug.Log(statInfo.normalizedTime);
+        if (statInfo.normalizedTime >= 0.9f)
+        {
+                character_animator.SetBool("RightAttack", false);
+                character_animator.SetBool("LeftAttack", false);
+            if (statInfo.IsName("Attack_01"))
+            {
+            }
+            //if (statInfo.IsName("Attack_03"))
+            character_animator.Play("Idle");
+        }
+
     }
 
-    IEnumerator Print(bool buttonPressed)
+    IEnumerator Print()
     {
-        yield return new WaitForSeconds(1f);
-        Debug.Log(RightRocker_H + " : " + RightRocker_V);
-        Debug.Log(buttonPressed ? "Button is pressing" : "Button is not pressed");
+        Debug.Log(direction);
 
+        this.firstPos = new Vector2(RightRocker_H, RightRocker_V);
+
+        yield return new WaitForSeconds(0.1f);
+        this.secondPos = new Vector2(RightRocker_H, RightRocker_V);
+        Debug.Log(this.secondPos);
+        direction = Dot(this.secondPos - this.firstPos, Vector2.right);
+
+        if (direction > 0.0f)
+        {
+            character_animator.SetBool("LeftAttack", true);
+        }
+        if (direction < 0.0f)
+        {
+            character_animator.SetBool("RightAttack", true);
+        }
+
+
+
+        direction = 0.0f;
+        this.firstPos = Vector2.zero;
+        this.secondPos = Vector2.zero;
+        Debug.Log(buttonPressed ? "Button is pressing" : "Button is not pressed");
+        startCheck = false;
+    }
+
+    float Dot(Vector2 a, Vector2 b)
+    {
+        return (a.x * b.x + a.y * b.y);
     }
 }
 
