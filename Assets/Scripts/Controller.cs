@@ -29,7 +29,7 @@ public class Controller : MonoBehaviour
 
     public float currentAngle = 0f;   // 当前角度
     public float targetAngle = 0f;   // 目标角度
-    public float rotateSpeed = 0.08f; // 旋转速度
+    public float rotateSpeed = 0.0001f; // 旋转速度
     public float threshold = 0.1f;    // 到达阈值
     bool isAnimationDown = true;
     // Start is called before the first frame update
@@ -39,7 +39,81 @@ public class Controller : MonoBehaviour
         this.currentDirection = this.transform.forward;
     }
 
-    void CalculateAnagle( )
+
+
+    // Update is called once per frame
+    void Update()
+    {
+        RightRocker_H = Input.GetAxis("RightHorizontal");
+        RightRocker_V = Input.GetAxis("RightVertical");
+        //UnityEngine.Debug.Log(RightRocker_H + " " + RightRocker_V);
+
+        buttonPressed = Input.GetKey(KeyCode.JoystickButton5);
+        if (buttonPressed && !startCheck && isAnimationDown)
+        {
+            startCheck = true;
+            StartCoroutine(Print());
+
+        }
+        if (startCheck == false)
+        {
+            StopCoroutine(Print());
+        }
+        AnimatorStateInfo statInfo = character_animator.GetCurrentAnimatorStateInfo(0);
+
+        if (statInfo.normalizedTime >= 0.99f)
+        {
+            character_animator.SetBool("RightAttack", false);
+            character_animator.SetBool("LeftAttack", false);
+            isAnimationDown = true;
+            character_animator.Play("Idle");
+        }
+        if (!buttonPressed && isAnimationDown)
+        {
+            CalculateAnagle();
+        }
+    }
+
+    IEnumerator Print()
+    {
+
+        this.firstPos = new Vector2(RightRocker_H, -RightRocker_V);
+
+        yield return new WaitForSeconds(0.1f);
+        this.secondPos = new Vector2(RightRocker_H, -RightRocker_V);
+
+        Vector2 controllerDirection = (this.secondPos - this.firstPos).normalized;
+        Vector2 currentCharacterDirection = new Vector2(this.transform.forward.x, this.transform.forward.z).normalized;
+        direction = Cross(currentCharacterDirection, controllerDirection);
+        //UnityEngine.Debug.Log(this.firstPos + " " + this.secondPos + " " + direction);
+        UnityEngine.Debug.Log(this.firstPos + " " + this.secondPos + " " + controllerDirection + " " + currentCharacterDirection + " " + direction);
+
+        if (direction > 0.0f)
+        {
+            character_animator.SetBool("LeftAttack", true);
+        }
+        if (direction < 0.0f)
+        {
+            character_animator.SetBool("RightAttack", true);
+        }
+        isAnimationDown = false;
+
+        direction = 0.0f;
+        this.firstPos = Vector2.zero;
+        this.secondPos = Vector2.zero;
+        //UnityEngine.Debug.Log(buttonPressed ? "Button is pressing" : "Button is not pressed");
+        startCheck = false;
+    }
+
+    float Dot(Vector2 a, Vector2 b)
+    {
+        return (a.x * b.x + a.y * b.y);
+    }
+    float Cross(Vector2 a, Vector2 b)
+    {
+        return a.x * b.y - b.x * a.y;
+    }
+    void CalculateAnagle()
     {
         float deadZone = 0.1f;
 
@@ -79,76 +153,6 @@ public class Controller : MonoBehaviour
 
         }
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        RightRocker_H = Input.GetAxis("RightHorizontal");
-        RightRocker_V = Input.GetAxis("RightVertical");
-
-        buttonPressed = Input.GetKey(KeyCode.JoystickButton5);
-        if (buttonPressed && !startCheck)
-        {
-            startCheck = true;
-            StartCoroutine(Print());
-
-        }
-        if (startCheck == false)
-        {
-            StopCoroutine(Print());
-        }
-        AnimatorStateInfo statInfo = character_animator.GetCurrentAnimatorStateInfo(0);
-
-        if (statInfo.normalizedTime >= 0.99f)
-        {
-            character_animator.SetBool("RightAttack", false);
-            character_animator.SetBool("LeftAttack", false);
-            isAnimationDown = true;
-            character_animator.Play("Idle");
-        }
-        if (!buttonPressed && isAnimationDown)
-        {
-            CalculateAnagle();
-        }
-    }
-
-    IEnumerator Print()
-    {
-        UnityEngine.Debug.Log(direction);
-
-        this.firstPos = new Vector2(RightRocker_H, RightRocker_V);
-
-        yield return new WaitForSeconds(0.1f);
-        this.secondPos = new Vector2(RightRocker_H, RightRocker_V);
-        UnityEngine.Debug.Log(this.secondPos);
-        direction = Dot(this.secondPos - this.firstPos, Vector2.right);
-
-        if (direction > 0.0f)
-        {
-            character_animator.SetBool("LeftAttack", true);
-            isAnimationDown = false;
-        }
-        if (direction < 0.0f)
-        {
-            character_animator.SetBool("RightAttack", true);
-            isAnimationDown = false;
-        }
-
-
-
-        direction = 0.0f;
-        this.firstPos = Vector2.zero;
-        this.secondPos = Vector2.zero;
-        UnityEngine.Debug.Log(buttonPressed ? "Button is pressing" : "Button is not pressed");
-        startCheck = false;
-    }
-
-    float Dot(Vector2 a, Vector2 b)
-    {
-        return (a.x * b.x + a.y * b.y);
-    }
-
-
     void OldRotation()
     {
         //CalculateAnagle();
